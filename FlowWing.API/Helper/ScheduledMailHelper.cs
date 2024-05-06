@@ -5,8 +5,6 @@ using FlowWing.Entities;
 using Hangfire;
 using Microsoft.Extensions.Options;
 using FlowWing.API.Models;
-using NCrontab;
-
 namespace FlowWing.API.Helpers;
 
 public class ScheduledMailHelper
@@ -58,7 +56,6 @@ public class ScheduledMailHelper
         }
     }
 
-    // Kullanıcıdan alınan tekrar aralığını uygun cron ifadesine dönüştür
     private string GetCronExpression(string userInput)
     {
         string[] parts = userInput.Split('-');
@@ -78,25 +75,21 @@ public class ScheduledMailHelper
 
         if (month > 0)
         {
-            // Aylık tekrar için
-            return $"0 0 1 * *"; // Her ayın 1. gününde 00:00'da
+            return $"0 0 1 * *"; 
         }
         else if (day > 0)
         {
             if (day >= 7)
             {
-                // Haftalık tekrar için
-                return $"0 0 * * 0"; // Her Pazar 00:00'da
+                return $"0 0 * * 0";
             }
             else
             {
-                // Günlük tekrar için
-                return $"0 0 * * *"; // Her gün 00:00'da
+                return $"0 0 * * *"; 
             }
         }
         else if (hour > 0)
         {
-            // Saatlik tekrar
             return Cron.HourInterval(hour); // Her belirlenen saatte bir
         }
         else

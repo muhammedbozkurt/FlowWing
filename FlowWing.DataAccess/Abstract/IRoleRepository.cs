@@ -9,6 +9,7 @@ namespace FlowWing.DataAccess.Abstract
 {
     public interface IRoleRepository
     {
+        Task<Role> GetRoleByUserEmail(string email);
         Task<Role?> GetByIdAsync(int id);
         Task<List<Role>> GetAllAsync();
         Task<Role?> GetByNameAsync(string roleName);

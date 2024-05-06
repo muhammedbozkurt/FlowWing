@@ -46,5 +46,10 @@ namespace FlowWing.Business.Concrete
         {
             await _roleRepository.UpdateAsync(role);
         }
+
+        public async Task<Role> GetRoleByUserEmail(string email)
+        {
+            return await _roleRepository.GetRoleByUserEmail(email);
+        }
     }
 }

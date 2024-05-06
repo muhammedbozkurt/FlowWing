@@ -50,5 +50,28 @@ namespace FlowWing.DataAccess.Concrete
             _dbContext.Roles.Update(role);
             await _dbContext.SaveChangesAsync();
         }
+        public async Task<Role> GetRoleByUserEmail(string email)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user != null)
+            {
+                if (user.RoleId == 1)
+                {
+                    return await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+                }
+                else if (user.RoleId == 2)
+                {
+                    return await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace FlowWing.Business.Abstract
 {
     public interface IRoleService
     {
+        Task<Role> GetRoleByUserEmail(string email);
         Task<Role?> GetByIdAsync(int id);
         Task<List<Role>> GetAllAsync();
         Task<Role?> GetByNameAsync(string roleName);

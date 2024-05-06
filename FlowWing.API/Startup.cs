@@ -1,6 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Configuration;
+using System.Reflection;
+using System.Security.Claims;
 using System.Text;
-using FlowWing.API.Controllers;
 using FlowWing.API.Helper;
 using FlowWing.API.Helpers;
 using FlowWing.API.Middlewares;
@@ -10,13 +11,9 @@ using FlowWing.DataAccess;
 using FlowWing.DataAccess.Abstract;
 using FlowWing.DataAccess.Concrete;
 using Hangfire;
-using Hangfire.PostgreSql;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -31,19 +28,35 @@ namespace FlowWing.API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddHangfire(config =>
-            //    config.UsePostgreSqlStorage(c =>c.UseNpgsqlConnection(
-            //        "Server=localhost;Port=5432;Database=flowwing;User Id=postgres;Password=1234;\r\n")));
+            var connectionString = Configuration.GetConnectionString("HangfireConnection");
+            var databaseConnectionString = Configuration.GetConnectionString("DatabaseConnection");
             
-            //services.AddHangfireServer();
-            
+
+            services.AddDbContext<FlowWingDbContext>(options =>
+                       options.UseSqlServer(databaseConnectionString)
+                );
+            services.AddHangfire(config =>
+                config.UseSqlServerStorage(
+                    connectionString,
+                    new SqlServerStorageOptions
+                    {
+                        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                        QueuePollInterval = TimeSpan.FromSeconds(15),
+                        UseRecommendedIsolationLevel = true,
+                        UsePageLocksOnDequeue = true,
+                        DisableGlobalLocks = true
+                    }
+                )
+            );
+
+            services.AddHangfireServer();
+
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
-            // Burada bağımlılıkları ekleyin
-            //Add Cors and allow all the connections
+    
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", builder =>
@@ -54,8 +67,7 @@ namespace FlowWing.API
                 });
             });
 
-            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
-            //services.AddScoped<DbContext,FlowWingDbContext>();
+            services.Configure<AppSettings>(Configuration);
             services.AddScoped<ScheduledMailHelper>();
             services.AddScoped<EmailSenderService>();
 
@@ -74,25 +86,31 @@ namespace FlowWing.API
             services.AddScoped<ILoggingRepository, LoggingRepository>();
             services.AddScoped<ILoggingService, LoggingManager>();
 
-
-            services.AddDbContext<FlowWingDbContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IRoleService, RoleManager>();
+            
             services.AddControllers();
             
             // JWT Authentication ekle
-            var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:SecretKey").Value);
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
+            var key = Encoding.ASCII.GetBytes(Configuration.GetSection("SecretKey").Value);
+            services.AddAuthentication(x =>
+            {
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(x =>
+            {
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = true;
+                x.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero
-                    };
-                });
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    RoleClaimType = ClaimTypes.Role // Rol bilgisini burada belirtiyoruz
+                };
+            });
 
             // Swagger belgesi ekle
             services.AddSwaggerGen(c =>
@@ -140,7 +158,6 @@ namespace FlowWing.API
             services.AddHostedService<RoleInitializer>();
         }
         
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -149,12 +166,10 @@ namespace FlowWing.API
             }
             app.UsePathBase("/FlowWingAPI");
 
-            // 
-            //app.UseOpenApi();
-            //app.UseHangfireDashboard("/hangfire", new DashboardOptions
-            //{
-            //    DashboardTitle = "FlowWing Hangfire Dashboard"
-            //});
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                DashboardTitle = "FlowWing Hangfire Dashboard"
+            });
             
             app.UseRouting();
             app.UseCors("AllowAll");
@@ -164,11 +179,11 @@ namespace FlowWing.API
                 c.SwaggerEndpoint("/FlowWingAPI/swagger/v1/swagger.json", "FlowWing API v1");
                 
             });
-            //use middleware logging middleware as a singleton
             app.UseMiddleware<LoggingMiddleware>();
 
-
+            app.UseAuthentication();
             app.UseAuthorization();
+            
             app.UseWhen(context =>
                 context.Request.Path.StartsWithSegments("/api/EmailLogs") ||
                 context.Request.Path.StartsWithSegments("/api/ScheduledEmails"),

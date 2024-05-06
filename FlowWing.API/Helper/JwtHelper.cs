@@ -8,7 +8,7 @@ namespace FlowWing.API.Helpers
 {
     public static class JwtHelper
     {
-        public static string GenerateJwtToken(int userId, string email, string secretKey, int expiryInDays)
+        public static string GenerateJwtToken(int userId, string email, string secretKey, int expiryInDays, string role)
         {
             string StringUserId = userId.ToString();
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -20,7 +20,7 @@ namespace FlowWing.API.Helpers
                 {
                     new Claim(ClaimTypes.Email, email),
                     new Claim(ClaimTypes.NameIdentifier, StringUserId),
-                    new Claim(ClaimTypes.Role, "User")
+                    new Claim(ClaimTypes.Role, role)
                 }),
                 Expires = DateTime.UtcNow.AddDays(expiryInDays),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
