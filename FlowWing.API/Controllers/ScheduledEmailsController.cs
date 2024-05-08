@@ -319,11 +319,23 @@ namespace FlowWing.API.Controllers
         [HttpDelete("ScheduledEmail/{id}")]
         public async Task<IActionResult> DeleteScheduledEmail(int id)
         {
+            (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
+
             if (await _scheduledEmailService.GetScheduledEmailByIdAsync(id) == null)
             {
                 return NotFound();
             }
-            await _scheduledEmailService.DeleteScheduledEmailAsync(id);
+            var scheduledEmailLog = await _scheduledEmailService.GetScheduledEmailByIdAsync(id);
+            var emailLog = await _emailLogService.GetEmailLogByIdAsync(scheduledEmailLog.EmailLogId);
+
+            if (emailLog.RecipientsEmail == UserEmail)
+            {
+                await _scheduledEmailService.DeleteScheduledEmailRecieverAsync(scheduledEmailLog.Id);
+            }
+            else
+            {
+                await _scheduledEmailService.DeleteScheduledEmailSenderAsync(scheduledEmailLog.Id);
+            }
 
             return Ok();
         }
@@ -336,13 +348,19 @@ namespace FlowWing.API.Controllers
         [HttpDelete("ScheduledRepeatingEmail/{id}")]
         public async Task<IActionResult> DeleteScheduledRepeatingEmail(int id)
         {
+            (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
+
             if (await _scheduledEmailService.GetScheduledEmailByIdAsync(id) == null)
             {
                 return NotFound();
             }
+            var scheduledEmailLog = await _scheduledEmailService.GetScheduledEmailByIdAsync(id);
+            var emailLog = await _emailLogService.GetEmailLogByIdAsync(scheduledEmailLog.EmailLogId);
 
-            await _scheduledEmailService.DeleteScheduledRepeatingEmailAsync(id);
-            
+            if (emailLog.RecipientsEmail != UserEmail)
+            {
+                await _scheduledEmailService.DeleteScheduledRepeatingEmailSenderAsync(id);
+            }
             return Ok();
         }
     }

@@ -15,7 +15,8 @@ namespace FlowWing.Business.Abstract
         Task<IEnumerable<ScheduledEmail>> GetAllScheduledEmailsAsync();
         Task<ScheduledEmail> CreateScheduledEmailAsync(ScheduledEmail scheduledEmail);
         Task<ScheduledEmail> UpdateScheduledEmailAsync(ScheduledEmail scheduledEmail);
-        Task<ScheduledEmail> DeleteScheduledEmailAsync(int id);
-        Task<ScheduledEmail> DeleteScheduledRepeatingEmailAsync(int id);
+        Task<ScheduledEmail> DeleteScheduledEmailSenderAsync(int id);
+        Task<ScheduledEmail> DeleteScheduledEmailRecieverAsync(int id);
+        Task<ScheduledEmail> DeleteScheduledRepeatingEmailSenderAsync(int id);
     }
 }

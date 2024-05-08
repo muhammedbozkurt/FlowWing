@@ -179,7 +179,7 @@ namespace FlowWing.API
                 c.SwaggerEndpoint("/FlowWingAPI/swagger/v1/swagger.json", "FlowWing API v1");
                 
             });
-            app.UseMiddleware<LoggingMiddleware>();
+            // app.UseMiddleware<LoggingMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();

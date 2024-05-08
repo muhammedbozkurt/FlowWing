@@ -24,19 +24,17 @@ namespace FlowWing.Business.Concrete
         {
             return await _scheduledEmailRepository.CreateScheduledEmailAsync(scheduledEmail);
         }
-
-        public async Task<ScheduledEmail> DeleteScheduledEmailAsync(int id)
+        public async Task<ScheduledEmail> DeleteScheduledEmailSenderAsync(int id)
         {
             ScheduledEmail scheduledEmail = await _scheduledEmailRepository.GetScheduledEmailByIdAsync(id);
             EmailLog emailLog = await _emailLogRepository.GetEmailLogByIdAsync(scheduledEmail.EmailLogId);
             if (scheduledEmail != null)
             {
-                //add 30 days to DeletionDate column of scheduledEmail and emailLog and make it utc time format
-                emailLog.DeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
-                scheduledEmail.DeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                emailLog.SenderDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                scheduledEmail.SenderDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
                 await _scheduledEmailRepository.UpdateScheduledEmailAsync(scheduledEmail);
                 await _emailLogRepository.UpdateEmailLogAsync(emailLog);
-                
+
                 BackgroundJob.Delete(emailLog.HangfireJobId);
                 BackgroundJob.Schedule(() => _emailLogRepository.DeleteEmailLogAsync(emailLog), TimeSpan.FromDays(30));
                 BackgroundJob.Schedule(() => _scheduledEmailRepository.DeleteScheduledEmailAsync(scheduledEmail), TimeSpan.FromDays(30));
@@ -44,11 +42,32 @@ namespace FlowWing.Business.Concrete
             }
             else
             {
-                   return null;
+                return null;
+            }
+        }
+        public async Task<ScheduledEmail> DeleteScheduledEmailRecieverAsync(int id)
+        {
+            ScheduledEmail scheduledEmail = await _scheduledEmailRepository.GetScheduledEmailByIdAsync(id);
+            EmailLog emailLog = await _emailLogRepository.GetEmailLogByIdAsync(scheduledEmail.EmailLogId);
+            if (scheduledEmail != null)
+            {
+                emailLog.RecieverDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                scheduledEmail.RecieverDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                await _scheduledEmailRepository.UpdateScheduledEmailAsync(scheduledEmail);
+                await _emailLogRepository.UpdateEmailLogAsync(emailLog);
+
+                BackgroundJob.Delete(emailLog.HangfireJobId);
+                BackgroundJob.Schedule(() => _emailLogRepository.DeleteEmailLogAsync(emailLog), TimeSpan.FromDays(30));
+                BackgroundJob.Schedule(() => _scheduledEmailRepository.DeleteScheduledEmailAsync(scheduledEmail), TimeSpan.FromDays(30));
+                return scheduledEmail;
+            }
+            else
+            {
+                return null;
             }
         }
 
-        public async Task<ScheduledEmail> DeleteScheduledRepeatingEmailAsync(int id)
+        public async Task<ScheduledEmail> DeleteScheduledRepeatingEmailSenderAsync(int id)
         {
             // Get the ScheduledEmail object based on the provided ID
             var scheduledEmail = await _scheduledEmailRepository.GetScheduledEmailByIdAsync(id);
@@ -66,7 +85,7 @@ namespace FlowWing.Business.Concrete
             // Update DeletionDate for each EmailLog and schedule its deletion
             foreach (var emailLog in emailLogs)
             {
-                emailLog.DeletionDate = deletionDate; // Set deletion date to 30 days later
+                emailLog.SenderDeletionDate = deletionDate; // Set deletion date to 30 days later
                 await _emailLogRepository.UpdateEmailLogAsync(emailLog); // Update the EmailLog in the repository
 
                 // Schedule the deletion of the EmailLog after 30 days
@@ -77,7 +96,7 @@ namespace FlowWing.Business.Concrete
             }
 
             // Update DeletionDate for the ScheduledEmail
-            scheduledEmail.DeletionDate = deletionDate;
+            scheduledEmail.SenderDeletionDate = deletionDate;
             await _scheduledEmailRepository.UpdateScheduledEmailAsync(scheduledEmail);
 
             // Schedule the deletion of the ScheduledEmail after 30 days

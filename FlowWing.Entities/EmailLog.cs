@@ -38,7 +38,8 @@ namespace FlowWing.Entities
         
         public int? Answer { get; set; }
         public int? ForwardedFrom { get; set; }
-        public DateTime? DeletionDate { get; set; }
+        public DateTime? SenderDeletionDate { get; set; }
+        public DateTime? RecieverDeletionDate { get; set; }
         public string? HangfireJobId { get; set; }
 
         [ForeignKey("UserId")] 

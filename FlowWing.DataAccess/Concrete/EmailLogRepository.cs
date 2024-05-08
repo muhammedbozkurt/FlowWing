@@ -40,11 +40,11 @@ namespace FlowWing.DataAccess.Concrete
         }
         public async Task<IEnumerable<EmailLog>> GetEmailLogsByRecipientsEmailDeletedAsync(string recipientEmail)
         {
-            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.RecipientsEmail == recipientEmail && x.DeletionDate != null).ToListAsync();
+            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.RecipientsEmail == recipientEmail && x.RecieverDeletionDate != null).ToListAsync();
         }
         public async Task<IEnumerable<EmailLog>> GetEmailLogsByUserIdDeletedAsync(int userId)
         {
-            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.UserId == userId && x.DeletionDate != null).ToListAsync();
+            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.UserId == userId && x.SenderDeletionDate != null).ToListAsync();
         }
         public async Task<IEnumerable<EmailLog>> GetAllEmailLogsAsync()
         {
@@ -56,11 +56,11 @@ namespace FlowWing.DataAccess.Concrete
         }
         public async Task<IEnumerable<EmailLog>> GetNotDeletedEmailLogsAsync(int userId)
         {
-            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.UserId == userId && x.DeletionDate == null).ToListAsync();
+            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.UserId == userId && x.SenderDeletionDate == null).ToListAsync();
         }
         public async Task<IEnumerable<EmailLog>> GetNotDeletedEmailLogsByRecipientsEmailAsync(string recipientEmail)
         {
-            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.RecipientsEmail.Contains(recipientEmail) && x.DeletionDate == null).ToListAsync();
+            return await _dbContext.EmailLogs.AsNoTracking().Where(x => x.RecipientsEmail == recipientEmail && x.RecieverDeletionDate == null).ToListAsync();
 
 
         }

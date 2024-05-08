@@ -38,7 +38,7 @@ namespace FlowWing.Business.Concrete
             return emailLog;
         }
 
-        public async Task<EmailLog> DeleteEmailLogAsync(int id)
+        public async Task<EmailLog> DeleteEmailSenderLogAsync(int id)
         {
             if (await _emailLogRepository.GetEmailLogByIdAsync(id) == null)
             {
@@ -47,7 +47,7 @@ namespace FlowWing.Business.Concrete
             else
             {
                 var emailLog = await _emailLogRepository.GetEmailLogByIdAsync(id);
-                emailLog.DeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                emailLog.SenderDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
                 await _emailLogRepository.UpdateEmailLogAsync(emailLog);
 
                 BackgroundJob.Schedule(() => _emailLogRepository.DeleteEmailLogAsync(emailLog), TimeSpan.FromDays(30));
@@ -55,7 +55,23 @@ namespace FlowWing.Business.Concrete
                 return emailLog;
             }
         }
+        public async Task<EmailLog> DeleteEmailRecieverLogAsync(int id)
+        {
+            if (await _emailLogRepository.GetEmailLogByIdAsync(id) == null)
+            {
+                throw new Exception("EmailLog does not exist");
+            }
+            else
+            {
+                var emailLog = await _emailLogRepository.GetEmailLogByIdAsync(id);
+                emailLog.RecieverDeletionDate = DateTime.Now.AddDays(30).ToUniversalTime();
+                await _emailLogRepository.UpdateEmailLogAsync(emailLog);
 
+                BackgroundJob.Schedule(() => _emailLogRepository.DeleteEmailLogAsync(emailLog), TimeSpan.FromDays(30));
+
+                return emailLog;
+            }
+        }
         public async Task<IEnumerable<EmailLog>> GetEmailLogsByUserIdDeletedAsync(int userId)
         {
             return await _emailLogRepository.GetEmailLogsByUserIdDeletedAsync(userId);

@@ -44,8 +44,8 @@ namespace FlowWing.API.Controllers
         ///  Get emails which is comes to the user
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetUserSentEmails")]
-        public async Task<IActionResult> GetUserSentEmails()
+        [HttpGet("GetUserRecievedEmails")]
+        public async Task<IActionResult> GetUserRecievedEmails()
         {
             bool Sender;
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
@@ -90,8 +90,8 @@ namespace FlowWing.API.Controllers
         /// Get Emails which is user sent and deleted
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetUserReceivedDeletedEmails")]
-        public async Task<IActionResult> GetUserReceivedDeletedEmails()
+        [HttpGet("GetUserSendedDeletedEmails")]
+        public async Task<IActionResult> GetUserSendedDeletedEmails()
         {
             bool Sender;
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
@@ -144,8 +144,8 @@ namespace FlowWing.API.Controllers
         ///  Get emails which is comes to the user and deleted
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetUserSenDeletedtEmails")]
-        public async Task<IActionResult> GetUserSentDeletedEmails()
+        [HttpGet("GetUserRecievedDeletedEmails")]
+        public async Task<IActionResult> GetUserRecievedDeletedEmails()
         {
             bool Sender;
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
@@ -281,8 +281,8 @@ namespace FlowWing.API.Controllers
         /// Get Emails which is user sent
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetUserReceivedEmails")]
-        public async Task<IActionResult> GetUserReceivedEmails()
+        [HttpGet("GetUserSendedEmails")]
+        public async Task<IActionResult> GetUserSendedEmails()
         {
             bool Sender;
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
@@ -398,6 +398,8 @@ namespace FlowWing.API.Controllers
         public async Task<IActionResult> CreateEmailLog([FromForm] EmailLogModel emailLogModel)
         {
             EmailLog createdEmailLog;
+            List<EmailLog> createdEmailLogs = new List<EmailLog>();
+            
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
             User user = await _userService.GetUserByIdAsync(int.Parse(UserId));
             var formFiles = HttpContext.Request.Form.Files;
@@ -409,83 +411,83 @@ namespace FlowWing.API.Controllers
                 {
                     return BadRequest("Yalnızca arcelik maillerine mail gönderilebilmektedir");
                 }
-            }
 
-            createdEmailLog = new EmailLog
-            {
-                UserId = int.Parse(UserId),
-                CreationDate = DateTime.UtcNow,
-                SentDateTime = DateTime.UtcNow,
-                RecipientsEmail = emailLogModel.RecipientsEmail,
-                SenderEmail = UserEmail,
-                EmailSubject = emailLogModel.EmailSubject,
-                SentEmailBody = emailLogModel.EmailBody,
-                Status = true,
-                IsScheduled = false,
-                User = user
-            };
-
-            if (emailLogModel.RepliedEmailId != null)
-            {
-                int RepliedEmailId = (int)emailLogModel.RepliedEmailId;
-                EmailLog RepliedEmail = await _emailLogService.GetEmailLogByIdAsync(RepliedEmailId);
-
-                if (RepliedEmail == null)
+                createdEmailLog = new EmailLog
                 {
-                    //RepliedEmailId'si verilen email log bulunamadıysa kullaniciya bu durumu bildiriyoruz.
-                    return NotFound("Replied Email Not Found");
-                }
+                    UserId = int.Parse(UserId),
+                    CreationDate = DateTime.UtcNow,
+                    SentDateTime = DateTime.UtcNow,
+                    RecipientsEmail = recipient,
+                    SenderEmail = UserEmail,
+                    EmailSubject = emailLogModel.EmailSubject,
+                    SentEmailBody = emailLogModel.EmailBody,
+                    Status = true,
+                    IsScheduled = false,
+                    User = user
+                };
 
-                createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
-
-                if (RepliedEmail.Answer == null)
+                if (emailLogModel.RepliedEmailId != null)
                 {
-                    RepliedEmail.Answer = createdEmailLog.Id;
+                    int RepliedEmailId = (int)emailLogModel.RepliedEmailId;
+                    EmailLog RepliedEmail = await _emailLogService.GetEmailLogByIdAsync(RepliedEmailId);
+
+                    if (RepliedEmail == null)
+                    {
+                        //RepliedEmailId'si verilen email log bulunamadıysa kullaniciya bu durumu bildiriyoruz.
+                        return NotFound("Replied Email Not Found");
+                    }
+
+                    createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
+
+                    if (RepliedEmail.Answer == null)
+                    {
+                        RepliedEmail.Answer = createdEmailLog.Id;
+                    }
+                    else
+                    {
+                        return BadRequest("Replied Email has already been answered");
+                    }
+                    _emailLogService.UpdateEmailLog(RepliedEmail);
                 }
                 else
                 {
-                    return BadRequest("Replied Email has already been answered");
+                    createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
                 }
-                _emailLogService.UpdateEmailLog(RepliedEmail);
-            }
-            else
-            {
-                createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
-            }
 
-            foreach (var formFile in formFiles)
-            {
-                using (var stream = new MemoryStream())
+                foreach (var formFile in formFiles)
                 {
-                    await formFile.CopyToAsync(stream);
-                    byte[] bytes = stream.ToArray();
-
-
-                    var attachment = new Entities.Attachment
+                    using (var stream = new MemoryStream())
                     {
-                        EmailLogId = createdEmailLog.Id,
-                        FileName = ClearTurkishCharacter(formFile.FileName),
-                        FileSize = formFile.Length,
-                        ContentType = formFile.ContentType,
-                        Data = bytes,
-                    };
+                        await formFile.CopyToAsync(stream);
+                        byte[] bytes = stream.ToArray();
 
-                    await _attachmentService.CreateAttachmentAsync(attachment);
-                    attachmentIds += attachment.Id + ",";
+
+                        var attachment = new Entities.Attachment
+                        {
+                            EmailLogId = createdEmailLog.Id,
+                            FileName = ClearTurkishCharacter(formFile.FileName),
+                            FileSize = formFile.Length,
+                            ContentType = formFile.ContentType,
+                            Data = bytes,
+                        };
+
+                        await _attachmentService.CreateAttachmentAsync(attachment);
+                        attachmentIds += attachment.Id + ",";
+                    }
                 }
+
+                if (attachmentIds.Length > 0)
+                {
+                    attachmentIds = attachmentIds.Remove(attachmentIds.Length - 1);
+                    createdEmailLog.AttachmentIds = attachmentIds;
+                    _emailLogService.UpdateEmailLog(createdEmailLog);
+                }
+
+                await _emailSenderService.UpdateStatus(createdEmailLog);
+                createdEmailLogs.Add(createdEmailLog);
             }
 
-            if (attachmentIds.Length > 0)
-            {
-                attachmentIds = attachmentIds.Remove(attachmentIds.Length - 1);
-                createdEmailLog.AttachmentIds = attachmentIds;
-                _emailLogService.UpdateEmailLog(createdEmailLog);
-            }
-
-            await _emailSenderService.UpdateStatus(createdEmailLog);
-
-
-            return CreatedAtAction(nameof(GetEmailLogById), new { id = createdEmailLog.Id }, createdEmailLog);
+            return CreatedAtAction(nameof(GetEmailLogById), createdEmailLogs);
         }
 
         /// <summary>
@@ -497,6 +499,7 @@ namespace FlowWing.API.Controllers
         public async Task<IActionResult> CreateForwardedEmailLog([FromForm] ForwardedEmailLogModel forwardedEmailLogModel)
         {
             EmailLog createdEmailLog;
+            List<EmailLog> createdEmailLogs = new List<EmailLog>();
             EmailLog? forwardedEmailLog;
             (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
             User user = await _userService.GetUserByIdAsync(int.Parse(UserId));
@@ -509,61 +512,61 @@ namespace FlowWing.API.Controllers
                 {
                     return BadRequest("Yalnızca arcelik maillerine mail gönderilebilmektedir");
                 }
-            }
 
-            forwardedEmailLog = await _emailLogService.GetEmailLogByIdAsync(forwardedEmailLogModel.ForwardedEmailId);
-            if (forwardedEmailLog == null)
-            {
-                return (BadRequest("Iletilmek istenen mail bulunamadi."));
-            }
-
-            createdEmailLog = new EmailLog
-            {
-                UserId = int.Parse(UserId),
-                CreationDate = DateTime.UtcNow,
-                SentDateTime = DateTime.UtcNow,
-                RecipientsEmail = forwardedEmailLogModel.RecipientsEmail,
-                SenderEmail = UserEmail,
-                EmailSubject = forwardedEmailLog.EmailSubject,
-                SentEmailBody = forwardedEmailLogModel.EmailBody,
-                ForwardedFrom = forwardedEmailLogModel.ForwardedEmailId,
-                Status = true,
-                IsScheduled = false,
-                User = user
-            };
-            createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
-
-            foreach (var formFile in formFiles)
-            {
-                using (var stream = new MemoryStream())
+                forwardedEmailLog = await _emailLogService.GetEmailLogByIdAsync(forwardedEmailLogModel.ForwardedEmailId);
+                if (forwardedEmailLog == null)
                 {
-                    await formFile.CopyToAsync(stream);
-                    byte[] bytes = stream.ToArray();
-
-                    var attachment = new Entities.Attachment
-                    {
-                        EmailLogId = createdEmailLog.Id,
-                        FileName = ClearTurkishCharacter(formFile.FileName),
-                        FileSize = formFile.Length,
-                        ContentType = formFile.ContentType,
-                        Data = bytes,
-                    };
-
-                    await _attachmentService.CreateAttachmentAsync(attachment);
-                    attachmentIds += attachment.Id + ",";
+                    return (BadRequest("Iletilmek istenen mail bulunamadi."));
                 }
+
+                createdEmailLog = new EmailLog
+                {
+                    UserId = int.Parse(UserId),
+                    CreationDate = DateTime.UtcNow,
+                    SentDateTime = DateTime.UtcNow,
+                    RecipientsEmail = recipient,
+                    SenderEmail = UserEmail,
+                    EmailSubject = forwardedEmailLog.EmailSubject,
+                    SentEmailBody = forwardedEmailLogModel.EmailBody,
+                    ForwardedFrom = forwardedEmailLogModel.ForwardedEmailId,
+                    Status = true,
+                    IsScheduled = false,
+                    User = user
+                };
+                createdEmailLog = await _emailLogService.CreateEmailLogAsync(createdEmailLog);
+
+                foreach (var formFile in formFiles)
+                {
+                    using (var stream = new MemoryStream())
+                    {
+                        await formFile.CopyToAsync(stream);
+                        byte[] bytes = stream.ToArray();
+
+                        var attachment = new Entities.Attachment
+                        {
+                            EmailLogId = createdEmailLog.Id,
+                            FileName = ClearTurkishCharacter(formFile.FileName),
+                            FileSize = formFile.Length,
+                            ContentType = formFile.ContentType,
+                            Data = bytes,
+                        };
+
+                        await _attachmentService.CreateAttachmentAsync(attachment);
+                        attachmentIds += attachment.Id + ",";
+                    }
+                }
+
+                if (attachmentIds.Length > 0)
+                {
+                    attachmentIds = attachmentIds.Remove(attachmentIds.Length - 1);
+                    createdEmailLog.AttachmentIds = attachmentIds;
+                    _emailLogService.UpdateEmailLog(createdEmailLog);
+                }
+                createdEmailLogs.Add(createdEmailLog);
+                //_emailSenderService.SendEmail(createdEmailLog.RecipientsEmail, createdEmailLog.EmailSubject, createdEmailLog.SentEmailBody, createdEmailLog);
             }
 
-            if (attachmentIds.Length > 0)
-            {
-                attachmentIds = attachmentIds.Remove(attachmentIds.Length - 1);
-                createdEmailLog.AttachmentIds = attachmentIds;
-                _emailLogService.UpdateEmailLog(createdEmailLog);
-            }
-            //_emailSenderService.SendEmail(createdEmailLog.RecipientsEmail, createdEmailLog.EmailSubject, createdEmailLog.SentEmailBody, createdEmailLog);
-
-
-            return CreatedAtAction(nameof(GetEmailLogById), new { id = createdEmailLog.Id }, createdEmailLog);
+            return CreatedAtAction(nameof(GetEmailLogById), createdEmailLogs);
         }
 
         /// <summary>
@@ -608,12 +611,24 @@ namespace FlowWing.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmailLog(int id)
         {
+            (string UserEmail, string UserId) = (HttpContext.Items["UserEmail"] as string, HttpContext.Items["UserId"] as string);
+
 
             if (await _emailLogService.GetEmailLogByIdAsync(id) == null)
             {
                 return NotFound();
             }
-            await _emailLogService.DeleteEmailLogAsync(id);
+            var emaiLLog = await _emailLogService.GetEmailLogByIdAsync(id);
+
+            if (UserEmail == emaiLLog.RecipientsEmail)
+            {
+                await _emailLogService.DeleteEmailRecieverLogAsync(id);
+            }
+            else
+            {
+                await _emailLogService.DeleteEmailSenderLogAsync(id);
+            }
+            
             return Ok();
         }    
     }

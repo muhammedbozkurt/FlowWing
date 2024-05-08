@@ -33,11 +33,18 @@ public class EmailOwnershipMiddleware
                 {
                     (string UserEmail, string UserId) = JwtHelper.GetJwtPayloadInfo(token);
                     var emailLog = await emailLogService.GetEmailLogByIdAsync(int.Parse(emailLogId));
-                    if (emailLog == null || emailLog.UserId != int.Parse(UserId))
+                    if (emailLog.UserId != int.Parse(UserId))
                     {
-                        context.Response.StatusCode = 403; // Erişim reddedildi
-                        await context.Response.WriteAsync("Mail kullanıcıya ait değil.");
-                        return;
+                        if (emailLog.RecipientsEmail == UserEmail)
+                        {
+
+                        }
+                        else
+                        {
+                            context.Response.StatusCode = 403; // Erişim reddedildi
+                            await context.Response.WriteAsync("Mail kullanıcıya ait değil.");
+                            return;
+                        }
                     }
                 }
                 else
