@@ -119,6 +119,10 @@ namespace FlowWing.Business.Concrete
         {
             return await _scheduledEmailRepository.GetScheduledEmailByEmailLogId(id);
         }
+        public async Task<ScheduledEmail> GetRepeatingScheduledMailByRepeatingLogId(int repeatingLogId)
+        {
+            return await _scheduledEmailRepository.GetRepeatingScheduledMailByRepeatingLogId(repeatingLogId);
+        }
 
         public async Task<IEnumerable<ScheduledEmail>> GetAllScheduledEmailsAsync()
         {

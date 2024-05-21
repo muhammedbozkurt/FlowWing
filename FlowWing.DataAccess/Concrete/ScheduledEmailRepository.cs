@@ -23,6 +23,11 @@ namespace FlowWing.DataAccess.Concrete
             return await _dbContext.ScheduledEmails.AsNoTracking().Where(x => x.IsRepeating).ToListAsync();
         }
 
+        public async Task<ScheduledEmail> GetRepeatingScheduledMailByRepeatingLogId(int repeatingLogId)
+        {
+            return await _dbContext.ScheduledEmails.AsNoTracking().FirstOrDefaultAsync(x => x.Id == repeatingLogId);
+        }
+
         public async Task<ScheduledEmail> CreateScheduledEmailAsync(ScheduledEmail scheduledEmail)
         {
             _dbContext.ScheduledEmails.Add(scheduledEmail);
