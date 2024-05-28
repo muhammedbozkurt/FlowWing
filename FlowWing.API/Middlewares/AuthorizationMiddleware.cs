@@ -32,9 +32,10 @@ namespace FlowWing.API.Middlewares
             if (JwtHelper.TokenIsValid(token, _appSettings.SecretKey))
             {
 
-                (string UserEmail, string UserId) = JwtHelper.GetJwtPayloadInfo(token);
+                (string UserEmail, string UserId, object roleName) = JwtHelper.GetJwtPayloadInfo(token);
                 context.Items["UserId"] = UserId;
                 context.Items["UserEmail"] = UserEmail;
+                context.Items["RoleName"] = roleName;
                 await _next(context);
             }
             else

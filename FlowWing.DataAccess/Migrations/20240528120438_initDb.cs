@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FlowWing.DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class initDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -78,7 +78,8 @@ namespace FlowWing.DataAccess.Migrations
                     IsScheduled = table.Column<bool>(type: "bit", nullable: false),
                     Answer = table.Column<int>(type: "int", nullable: true),
                     ForwardedFrom = table.Column<int>(type: "int", nullable: true),
-                    DeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SenderDeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RecieverDeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     HangfireJobId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -127,7 +128,8 @@ namespace FlowWing.DataAccess.Migrations
                     NextSendingDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RepeatInterval = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RepeatEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    SenderDeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RecieverDeletionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -85,7 +85,7 @@ namespace FlowWing.API.Controllers
 
             foreach (string recipient in scheduledEmail.RecipientsEmail.Split(','))
             {
-                if (!recipient.Contains("@arcelik.com"))
+                if (!recipient.Contains("@beko.com"))
                 {
                     return BadRequest("Yalnızca arcelik maillerine mail gönderilebilmektedir");
                 }
@@ -165,7 +165,7 @@ namespace FlowWing.API.Controllers
             String attachmentIds = "";
             foreach (string recipient in scheduledRepeatingEmailModel.RecipientsEmail.Split(','))
             {
-                if (!recipient.Contains("@arcelik.com"))
+                if (!recipient.Contains("@beko.com"))
                 {
                     return BadRequest("Yalnızca arcelik maillerine mail gönderilebilmektedir");
                 }

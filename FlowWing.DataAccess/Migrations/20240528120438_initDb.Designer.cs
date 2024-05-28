@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FlowWing.DataAccess.Migrations
 {
     [DbContext(typeof(FlowWingDbContext))]
-    [Migration("20240508183952_deletionDateUpdate")]
-    partial class deletionDateUpdate
+    [Migration("20240528120438_initDb")]
+    partial class initDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

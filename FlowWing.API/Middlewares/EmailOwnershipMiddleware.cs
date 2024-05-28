@@ -31,7 +31,7 @@ public class EmailOwnershipMiddleware
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
                 if (JwtHelper.TokenIsValid(token, appSettings.Value.SecretKey))
                 {
-                    (string UserEmail, string UserId) = JwtHelper.GetJwtPayloadInfo(token);
+                    (string UserEmail, string UserId, object roleName) = JwtHelper.GetJwtPayloadInfo(token);
                     var emailLog = await emailLogService.GetEmailLogByIdAsync(int.Parse(emailLogId));
                     if (emailLog.UserId != int.Parse(UserId))
                     {

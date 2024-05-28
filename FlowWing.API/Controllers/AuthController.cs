@@ -36,12 +36,12 @@ namespace FlowWing.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> SignUp(string sicil)
         {
-            User user = await _userService.GetUserByEmailAsync(sicil + "@arcelik.com");
+            User user = await _userService.GetUserByEmailAsync(sicil + "@beko.com");
             if (user == null)
             {
                 User newUser = new User
                 {
-                    Email = sicil + "@arcelik.com",
+                    Email = sicil + "@beko.com",
                     Password = PasswordHasher.HashPassword(sicil),
                     Username = sicil,
                     RoleId = 1,
@@ -77,7 +77,7 @@ namespace FlowWing.API.Controllers
         public async Task<IActionResult> Login(string sicil)
         {
             // Kullanıcı giriş işlemleri burada gerçekleştirilir
-            User user = await _userService.GetUserByEmailAsync(sicil + "@arcelik.com");
+            User user = await _userService.GetUserByEmailAsync(sicil + "@beko.com");
             if (user == null)
             {
                 return NotFound();

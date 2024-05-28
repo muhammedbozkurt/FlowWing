@@ -48,12 +48,12 @@ namespace FlowWing.API.Helpers
             return true;
         }
 
-        public static (string?, string?) GetJwtPayloadInfo(string token)
+        public static (string?, string?, object?) GetJwtPayloadInfo(string token)
         {
             if (string.IsNullOrWhiteSpace(token))
             {
                 // token geçerli değilse veya boşsa hata işleme alınabilir
-                return (null,null);
+                return (null, null, null);
             }
 
             var handler = new JwtSecurityTokenHandler();
@@ -64,16 +64,17 @@ namespace FlowWing.API.Helpers
                 // Token payload (veri) bilgileri
                 var payload = jsonToken.Payload;
 
-                // Payload'daki istediğiniz bilgilere erişebilirsiniz
                 var email = payload["email"];
                 var userId = payload["nameid"];
+                var role = payload["role"];
                 string StringUserId = userId.ToString();
                 string StringEmail = email.ToString();
-                return (StringEmail, StringUserId);
+                
+                return (StringEmail, StringUserId,role);
             }
             else
             {
-                return (null,null);
+                return (null, null, null);
             }
         }
 

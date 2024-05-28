@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+using FlowWing.API.Models;
 
 namespace FlowWing.API.Controllers
 {
@@ -68,7 +69,7 @@ namespace FlowWing.API.Controllers
             var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
             if (JwtHelper.TokenIsValid(token,secretKey:_appSettings.SecretKey))
             {
-                (string UserEmail, string UserId) = JwtHelper.GetJwtPayloadInfo(token);
+                (string UserEmail, string UserId, object roleName) = JwtHelper.GetJwtPayloadInfo(token);
                 var user = await _userService.GetUserByEmailAsync(UserEmail);
                 if (user == null)
                 {
@@ -88,10 +89,50 @@ namespace FlowWing.API.Controllers
         /// <param name="user"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateUser([FromBody] UserCreateModel userModel)
         {
-            var createdUser = await _userService.CreateUserAsync(user);
-            return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
+            int roleId = 1;
+            if (userModel.RoleName == "Admin")
+            {
+                roleId = 2;
+            }
+            User user = new User
+            {
+                Email = userModel.Sicil + "@beko.com",
+                Username = userModel.Sicil,
+                Password = PasswordHasher.HashPassword(userModel.Sicil),
+                RoleId = roleId,
+                IsApplicationUser = userModel.isApplicationUser,
+                LastLoginDate = DateTime.UtcNow,
+                CreationDate = DateTime.UtcNow
+            };
+
+            User createdUser = await _userService.CreateUserAsync(user);
+            UserResponseModel response = new UserResponseModel
+            {
+                Message = "Kayit Basarili",
+                Email = createdUser.Email
+            };
+
+            return Ok(response);
+        }
+        /// <summary>
+        /// Delete an user
+        /// </summary>
+        /// <param name="sicil"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(string sicil)
+        {
+            User user = await _userService.GetUserByEmailAsync(sicil + "@beko.com");
+            if (user == null)
+            {
+                return NotFound();
+            }
+            await _userService.DeleteUserAsync(user);
+            return Ok();
         }
 
         /// <summary>
@@ -110,24 +151,6 @@ namespace FlowWing.API.Controllers
 
             var updatedUser = await _userService.UpdateUserAsync(user);
             return Ok(updatedUser);
-        }
-
-        /// <summary>
-        /// Delete an User
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var userToDelete = await _userService.GetUserByIdAsync(id);
-            if (userToDelete == null)
-            {
-                return NotFound();
-            }
-
-            await _userService.DeleteUserAsync(userToDelete);
-            return Ok();
         }
     }
 }
