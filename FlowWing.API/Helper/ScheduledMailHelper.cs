@@ -1,4 +1,4 @@
-using System.Xml;
+﻿using System.Xml;
 using FlowWing.API.Models;
 using FlowWing.Business.Abstract;
 using FlowWing.Entities;
@@ -55,41 +55,25 @@ namespace FlowWing.API.Helpers
 
         private string GetCronExpression(string userInput)
         {
-            string[] parts = userInput.Split('-');
+            DateTime currentTime = DateTime.UtcNow;
 
+            var parts = userInput.Split('-');
             if (parts.Length != 4)
             {
-                throw new ArgumentException("Invalid date format. Correct format: Month-Day-Hour-Minute");
+                throw new ArgumentException("Input must be in the format '00-00-00-00'");
             }
+            //00-00-00-00
+            int months = int.Parse(parts[0]);
+            int days = int.Parse(parts[1]);
+            int hours = int.Parse(parts[2]);
+            int minutes = int.Parse(parts[3]);
 
-            if (!int.TryParse(parts[0], out int month) ||
-                !int.TryParse(parts[1], out int day) ||
-                !int.TryParse(parts[2], out int hour) ||
-                !int.TryParse(parts[3], out int minute))
-            {
-                throw new ArgumentException("Invalid date format.");
-            }
+            currentTime = currentTime.AddMonths(months);
+            currentTime = currentTime.AddDays(days);
+            currentTime = currentTime.AddHours(hours);
+            currentTime = currentTime.AddMinutes(minutes);
 
-            if (minute > 0)
-            {
-                return Cron.MinuteInterval(minute); // Every X minutes
-            }
-            else if (hour > 0)
-            {
-                return Cron.HourInterval(hour); // Every X hours
-            }
-            else if (day > 0)
-            {
-                return day >= 7 ? "0 0 * * 0" : "0 0 * * *"; // Weekly or daily
-            }
-            else if (month > 0)
-            {
-                return "0 0 1 * *"; // Monthly
-            }
-            else
-            {
-                throw new ArgumentException("Invalid interval values.");
-            }
+            return $"{currentTime.Minute} {currentTime.Hour} {currentTime.Day} {currentTime.Month} *";
         }
     }
 }
