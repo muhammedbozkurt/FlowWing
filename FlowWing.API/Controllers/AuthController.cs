@@ -91,7 +91,8 @@ namespace FlowWing.API.Controllers
                     Message = "Giris Basarili",
                     Email = user.Email,
                     Username = user.Username,
-                    Token = token
+                    Token = token,
+                    Role = role.Name
                 };
 
                 return Ok(response);
