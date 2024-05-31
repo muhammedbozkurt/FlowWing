@@ -97,5 +97,23 @@ namespace FlowWing.API.Controllers
                 return Ok(response);
             }
         }
+
+        ///<summary>
+        ///Check if user has admin role
+        ///</summary>
+        ///<returns></returns>
+        [HttpGet("checkadminrole")]
+        public async Task<IActionResult> CheckAdminRole()
+        {
+            string? roleName = HttpContext.Items["RoleName"] as string;
+            if (roleName != "Admin")
+            {
+                return Unauthorized();
+            }
+            else
+            {
+                return Ok();
+            }
+        }
     }
 }

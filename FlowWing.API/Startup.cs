@@ -187,7 +187,7 @@ namespace FlowWing.API
             app.UseWhen(context =>
                 context.Request.Path.StartsWithSegments("/api/EmailLogs") ||
                 context.Request.Path.StartsWithSegments("/api/ScheduledEmails") ||
-                context.Request.Path.StartsWithSegments("/api/Roles"),
+                context.Request.Path.StartsWithSegments("/api/Auth/checkadminrole"),
                 builder =>
                 {
                     builder.UseMiddleware<AuthorizationMiddleware>();
