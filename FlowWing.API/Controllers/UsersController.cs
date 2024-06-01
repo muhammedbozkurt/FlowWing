@@ -92,6 +92,12 @@ namespace FlowWing.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] UserCreateModel userModel)
         {
+            bool isAplicationUser = false;
+            if  (userModel.isApplicationUser == 1)
+            {
+                isAplicationUser = true;
+            }
+
             int roleId = 1;
             if (userModel.RoleName == "Admin")
             {
@@ -103,7 +109,7 @@ namespace FlowWing.API.Controllers
                 Username = userModel.Sicil,
                 Password = PasswordHasher.HashPassword(userModel.Sicil),
                 RoleId = roleId,
-                IsApplicationUser = userModel.isApplicationUser,
+                IsApplicationUser = isAplicationUser,
                 LastLoginDate = DateTime.UtcNow,
                 CreationDate = DateTime.UtcNow
             };

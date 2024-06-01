@@ -4,6 +4,6 @@
     {
         public string Sicil { get; set; }
         public string RoleName { get; set; }
-        public bool isApplicationUser { get; set; }
+        public int isApplicationUser { get; set; }
     }
 }
